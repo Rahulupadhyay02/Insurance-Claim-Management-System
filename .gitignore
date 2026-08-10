@@ -1,0 +1,31 @@
+# Environment & Secret files
+.env
+*.env
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Maven / Java Build outputs
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Node / Frontend dependencies & builds
+**/node_modules/
+**/dist/
+**/build/
+.output/
+
+# Logs & temp files
+*.log
+backend.log
+logs/
+
+# IDE files
+.idea/
+.vscode/
+*.iml

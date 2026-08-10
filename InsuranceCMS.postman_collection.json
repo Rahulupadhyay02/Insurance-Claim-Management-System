@@ -1,0 +1,426 @@
+{
+  "info": {
+    "_postman_id": "insurance-cms-collection",
+    "name": "Insurance Claim Management System",
+    "description": "Complete REST API test collection for the Insurance Claim Management System.\n\nOrder to run:\n1. Create Customer\n2. Create Policy\n3. Submit Claim\n4. Approve or Reject Claim\n\nBackend: Spring Boot 3.4.5 on http://localhost:8080\nDatabase: MySQL (insurance_db)\nAI: Risk classification runs automatically on claim submission.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",     "value": "http://localhost:8080/api" },
+    { "key": "customerId",  "value": "1" },
+    { "key": "policyId",    "value": "1" },
+    { "key": "claimId",     "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "👥 Customers",
+      "item": [
+        {
+          "name": "POST - Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/customers", "host": ["{{baseUrl}}"], "path": ["customers"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Rahul\",\n  \"lastName\": \"Upadhyay\",\n  \"email\": \"rahul@example.com\",\n  \"phone\": \"9876543210\",\n  \"address\": \"Mumbai, Maharashtra\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                "const json = pm.response.json();",
+                "pm.test('Has ID', () => pm.expect(json.id).to.be.a('number'));",
+                "pm.collectionVariables.set('customerId', json.id);",
+                "pm.test('Email matches', () => pm.expect(json.email).to.eql('rahul@example.com'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "GET - All Customers",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/customers", "host": ["{{baseUrl}}"], "path": ["customers"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "GET - Customer by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/customers/{{customerId}}", "host": ["{{baseUrl}}"], "path": ["customers", "{{customerId}}"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('ID matches', () => pm.expect(pm.response.json().id).to.eql(parseInt(pm.collectionVariables.get('customerId'))));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "PUT - Update Customer",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/customers/{{customerId}}", "host": ["{{baseUrl}}"], "path": ["customers", "{{customerId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Rahul\",\n  \"lastName\": \"Upadhyay\",\n  \"email\": \"rahul@example.com\",\n  \"phone\": \"9876543210\",\n  \"address\": \"Pune, Maharashtra\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('Address updated', () => pm.expect(pm.response.json().address).to.eql('Pune, Maharashtra'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "POST - Duplicate Email (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/customers", "host": ["{{baseUrl}}"], "path": ["customers"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Test\",\n  \"lastName\": \"Duplicate\",\n  \"email\": \"rahul@example.com\",\n  \"phone\": \"1234567890\",\n  \"address\": \"Mumbai\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 400 for duplicate email', () => pm.response.to.have.status(400));",
+                "pm.test('Error message present', () => pm.expect(pm.response.json().message).to.include('already exists'));"
+              ]
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "📋 Policies",
+      "item": [
+        {
+          "name": "POST - Create Policy",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/policies", "host": ["{{baseUrl}}"], "path": ["policies"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": {{customerId}},\n  \"policyNumber\": \"POL-2025-001\",\n  \"policyType\": \"HEALTH\",\n  \"coverageAmount\": 500000,\n  \"premiumAmount\": 12000,\n  \"startDate\": \"2025-01-01\",\n  \"endDate\": \"2026-01-01\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                "const json = pm.response.json();",
+                "pm.test('Has ID', () => pm.expect(json.id).to.be.a('number'));",
+                "pm.collectionVariables.set('policyId', json.id);",
+                "pm.test('Status is ACTIVE', () => pm.expect(json.status).to.eql('ACTIVE'));",
+                "pm.test('Policy number matches', () => pm.expect(json.policyNumber).to.eql('POL-2025-001'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "GET - All Policies",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/policies", "host": ["{{baseUrl}}"], "path": ["policies"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "GET - Policy by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/policies/{{policyId}}", "host": ["{{baseUrl}}"], "path": ["policies", "{{policyId}}"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "GET - Policies by Customer",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/policies/customer/{{customerId}}", "host": ["{{baseUrl}}"], "path": ["policies", "customer", "{{customerId}}"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "POST - Policy on non-existent customer (expect 404)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/policies", "host": ["{{baseUrl}}"], "path": ["policies"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": 99999,\n  \"policyNumber\": \"POL-NOTFOUND\",\n  \"policyType\": \"HEALTH\",\n  \"coverageAmount\": 100000,\n  \"premiumAmount\": 5000,\n  \"startDate\": \"2025-01-01\",\n  \"endDate\": \"2026-01-01\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Status 404 for missing customer', () => pm.response.to.have.status(404));"] }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "📁 Claims (+ AI Risk)",
+      "item": [
+        {
+          "name": "POST - Submit Claim (AI Risk Assessed)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/claims", "host": ["{{baseUrl}}"], "path": ["claims"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"policyId\": {{policyId}},\n  \"description\": \"Hospital admission for emergency surgery — appendectomy\",\n  \"claimAmount\": 350000,\n  \"incidentDate\": \"2025-06-15T10:00:00\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                "const json = pm.response.json();",
+                "pm.test('Has ID', () => pm.expect(json.id).to.be.a('number'));",
+                "pm.collectionVariables.set('claimId', json.id);",
+                "pm.test('Status is PENDING', () => pm.expect(json.status).to.eql('PENDING'));",
+                "pm.test('AI Risk Level assigned', () => pm.expect(['LOW','MEDIUM','HIGH']).to.include(json.riskLevel));",
+                "console.log('AI Risk Level:', json.riskLevel);"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "POST - HIGH RISK claim (amount near coverage)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/claims", "host": ["{{baseUrl}}"], "path": ["claims"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"policyId\": {{policyId}},\n  \"description\": \"Major accident requiring ICU care and prolonged hospital stay\",\n  \"claimAmount\": 450000,\n  \"incidentDate\": \"2025-07-01T08:30:00\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                "const json = pm.response.json();",
+                "console.log('AI Risk for high amount claim:', json.riskLevel);",
+                "pm.test('Risk is MEDIUM or HIGH (amount > 40% coverage)', () => pm.expect(['MEDIUM','HIGH']).to.include(json.riskLevel));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "GET - All Claims",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/claims", "host": ["{{baseUrl}}"], "path": ["claims"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "GET - Claim by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/claims/{{claimId}}", "host": ["{{baseUrl}}"], "path": ["claims", "{{claimId}}"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "PUT - Approve Claim",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/claims/{{claimId}}/approve", "host": ["{{baseUrl}}"], "path": ["claims", "{{claimId}}", "approve"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reviewNotes\": \"All medical documents verified. Claim is valid and within policy coverage.\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('Status is APPROVED', () => pm.expect(pm.response.json().status).to.eql('APPROVED'));",
+                "pm.test('Review notes saved', () => pm.expect(pm.response.json().reviewNotes).to.be.a('string'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "PUT - Approve already-approved claim (expect 400)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/claims/{{claimId}}/approve", "host": ["{{baseUrl}}"], "path": ["claims", "{{claimId}}", "approve"] },
+            "body": { "mode": "raw", "raw": "{\"reviewNotes\": \"Should fail\"}" }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Status 400 for double-approve', () => pm.response.to.have.status(400));"] }
+          }]
+        },
+        {
+          "name": "GET - Claims by Status (PENDING)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/claims/status/PENDING", "host": ["{{baseUrl}}"], "path": ["claims", "status", "PENDING"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('All PENDING', () => pm.response.json().forEach(c => pm.expect(c.status).to.eql('PENDING')));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "GET - HIGH Risk Claims (AI Filter)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/claims/risk/HIGH", "host": ["{{baseUrl}}"], "path": ["claims", "risk", "HIGH"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "console.log('High risk claims found:', pm.response.json().length);"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "GET - Claims by Policy",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/claims/policy/{{policyId}}", "host": ["{{baseUrl}}"], "path": ["claims", "policy", "{{policyId}}"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "POST - Claim exceeding coverage (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/claims", "host": ["{{baseUrl}}"], "path": ["claims"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"policyId\": {{policyId}},\n  \"description\": \"This claim amount exceeds the coverage limit\",\n  \"claimAmount\": 999999999,\n  \"incidentDate\": \"2025-06-15T10:00:00\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Status 400 when exceeding coverage', () => pm.response.to.have.status(400));"] }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "🔴 Error Cases",
+      "item": [
+        {
+          "name": "GET - Customer not found (404)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/customers/99999", "host": ["{{baseUrl}}"], "path": ["customers", "99999"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Status 404', () => pm.response.to.have.status(404));"] }
+          }]
+        },
+        {
+          "name": "POST - Customer invalid email (400 validation)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/customers", "host": ["{{baseUrl}}"], "path": ["customers"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\",\n  \"email\": \"not-an-email\",\n  \"phone\": \"9876543210\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status 400 for invalid email', () => pm.response.to.have.status(400));",
+                "pm.test('Validation errors present', () => pm.expect(pm.response.json().errors).to.be.an('object'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "POST - Customer invalid phone (400 validation)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/customers", "host": ["{{baseUrl}}"], "path": ["customers"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\",\n  \"email\": \"test2@example.com\",\n  \"phone\": \"123\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Status 400 for short phone', () => pm.response.to.have.status(400));"] }
+          }]
+        }
+      ]
+    }
+  ]
+}
