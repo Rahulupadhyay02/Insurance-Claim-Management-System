@@ -16,7 +16,14 @@ const PAGE_TITLES = {
 export default function App() {
   const [page, setPage]             = useState('dashboard');
   const [backendStatus, setBackend] = useState('checking');
+  const [theme, setTheme]           = useState(() => localStorage.getItem('insurance_theme') || 'dark');
   const { toasts, toast }           = useToast();
+
+  // ── Theme Effect ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('insurance_theme', theme);
+  }, [theme]);
 
   // ── Backend health check ─────────────────────────────────────────────────
   useEffect(() => {
@@ -41,7 +48,7 @@ export default function App() {
   }
 
   const pages = {
-    dashboard: <Dashboard onNavigate={navigate} toast={toast} />,
+    dashboard: <Dashboard onNavigate={navigate} toast={toast} theme={theme} setTheme={setTheme} />,
     customers: <Customers toast={toast} />,
     policies:  <Policies  toast={toast} />,
     claims:    <Claims    toast={toast} />,
@@ -62,7 +69,47 @@ export default function App() {
               <div className="topbar-page">{meta.title}</div>
               <div className="topbar-breadcrumb">{meta.breadcrumb}</div>
             </div>
-            <div className="topbar-right">
+            <div className="topbar-right" style={{ gap: '0.75rem' }}>
+              {/* Quick Theme Switcher */}
+              <div className="theme-quick-switch" style={{ display: 'flex', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '99px', padding: '0.2rem' }}>
+                <button
+                  title="Dark Navy Theme"
+                  onClick={() => setTheme('dark')}
+                  style={{
+                    border: 'none', background: theme === 'dark' ? 'var(--accent-blue)' : 'transparent',
+                    color: theme === 'dark' ? '#fff' : 'var(--text-secondary)', borderRadius: '99px',
+                    padding: '0.25rem 0.6rem', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600
+                  }}
+                >🌌 Dark</button>
+                <button
+                  title="Midnight OLED Theme"
+                  onClick={() => setTheme('oled')}
+                  style={{
+                    border: 'none', background: theme === 'oled' ? 'var(--accent-blue)' : 'transparent',
+                    color: theme === 'oled' ? '#fff' : 'var(--text-secondary)', borderRadius: '99px',
+                    padding: '0.25rem 0.6rem', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600
+                  }}
+                >🖤 OLED</button>
+                <button
+                  title="Emerald Cyber Theme"
+                  onClick={() => setTheme('emerald')}
+                  style={{
+                    border: 'none', background: theme === 'emerald' ? 'var(--accent-green)' : 'transparent',
+                    color: theme === 'emerald' ? '#fff' : 'var(--text-secondary)', borderRadius: '99px',
+                    padding: '0.25rem 0.6rem', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600
+                  }}
+                >🌿 Emerald</button>
+                <button
+                  title="Corporate Light Theme"
+                  onClick={() => setTheme('light')}
+                  style={{
+                    border: 'none', background: theme === 'light' ? 'var(--accent-blue)' : 'transparent',
+                    color: theme === 'light' ? '#fff' : 'var(--text-secondary)', borderRadius: '99px',
+                    padding: '0.25rem 0.6rem', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600
+                  }}
+                >☀️ Light</button>
+              </div>
+
               {backendStatus === 'offline' && (
                 <span style={{
                   fontSize: '0.75rem', color: 'var(--accent-red-light)',

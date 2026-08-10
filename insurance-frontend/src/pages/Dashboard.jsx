@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { customerApi, policyApi, claimApi } from '../api';
 import { formatCurrency, LoadingState, StatusBadge, RiskBadge } from '../components';
 
-export default function Dashboard({ onNavigate }) {
+export default function Dashboard({ onNavigate, theme, setTheme }) {
   const [stats, setStats] = useState(null);
   const [recentClaims, setRecentClaims] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +42,13 @@ export default function Dashboard({ onNavigate }) {
     { icon: '🚨', label: 'High Risk Claims', value: stats.highRisk, color: '#ef4444', bg: 'rgba(239,68,68,0.12)', page: 'claims' },
   ];
 
+  const themeOptions = [
+    { id: 'dark', title: 'Dark Navy', icon: '🌌', desc: 'Deep Cobalt & Glassmorphism', previewBg: '#0a0f1e', previewAccent: '#4f8ef7' },
+    { id: 'oled', title: 'Midnight OLED', icon: '🖤', desc: 'Pure Pitch Black & High Contrast', previewBg: '#000000', previewAccent: '#3b82f6' },
+    { id: 'emerald', title: 'Emerald Cyber', icon: '🌿', desc: 'Bio-Green & Cybernetic Teal', previewBg: '#041410', previewAccent: '#10b981' },
+    { id: 'light', title: 'Corporate Light', icon: '☀️', desc: 'Clean Modern White & Slate', previewBg: '#f8fafc', previewAccent: '#2563eb' },
+  ];
+
   return (
     <div className="page-container page-enter">
       {/* ── Header ── */}
@@ -72,6 +79,69 @@ export default function Dashboard({ onNavigate }) {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* ── Theme Customizer Section ── */}
+      <div className="card" style={{ marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              🎨 UI Theme Customizer
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.2rem' }}>
+              Choose a color theme for your workspace layout
+            </p>
+          </div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--accent-blue-light)', fontWeight: 600 }}>
+            Active: {themeOptions.find(t => t.id === theme)?.title || 'Dark Navy'}
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+          {themeOptions.map(t => {
+            const isActive = theme === t.id;
+            return (
+              <div
+                key={t.id}
+                onClick={() => setTheme(t.id)}
+                style={{
+                  padding: '1rem',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--bg-secondary)',
+                  border: isActive ? `2px solid ${t.previewAccent}` : '1px solid var(--border)',
+                  cursor: 'pointer',
+                  transition: 'var(--transition)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '1.25rem' }}>{t.icon}</span>
+                  {isActive && (
+                    <span style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      color: '#fff',
+                      background: t.previewAccent,
+                      padding: '0.15rem 0.5rem',
+                      borderRadius: '99px'
+                    }}>Active</span>
+                  )}
+                </div>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                  {t.title}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                  {t.desc}
+                </div>
+                <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
+                  <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: t.previewBg, border: '1px solid var(--border)' }} />
+                  <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: t.previewAccent }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* ── Recent Claims ── */}

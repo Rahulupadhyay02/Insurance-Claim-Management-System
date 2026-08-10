@@ -6,7 +6,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 /* ── CSS Variables ── */
-:root {
+:root, [data-theme="dark"] {
   --bg-primary: #0a0f1e;
   --bg-secondary: #0f1629;
   --bg-card: #131d35;
@@ -40,6 +40,90 @@
 
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="oled"] {
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-card: #121212;
+  --bg-card-hover: #1e1e1e;
+  --bg-glass: rgba(18, 18, 18, 0.85);
+
+  --accent-blue: #3b82f6;
+  --accent-blue-light: #60a5fa;
+  --accent-green: #10b981;
+  --accent-green-light: #34d399;
+  --accent-amber: #f59e0b;
+  --accent-amber-light: #fbbf24;
+  --accent-red: #f43f5e;
+  --accent-red-light: #fb7185;
+  --accent-purple: #c084fc;
+
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --text-muted: #52525b;
+
+  --border: rgba(255, 255, 255, 0.12);
+  --border-active: rgba(255, 255, 255, 0.35);
+
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.9);
+  --shadow-glow: 0 0 40px rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="emerald"] {
+  --bg-primary: #041410;
+  --bg-secondary: #08211b;
+  --bg-card: #0d2d25;
+  --bg-card-hover: #143d33;
+  --bg-glass: rgba(13, 45, 37, 0.85);
+
+  --accent-blue: #0ea5e9;
+  --accent-blue-light: #38bdf8;
+  --accent-green: #10b981;
+  --accent-green-light: #34d399;
+  --accent-amber: #f59e0b;
+  --accent-amber-light: #fbbf24;
+  --accent-red: #f43f5e;
+  --accent-red-light: #fb7185;
+  --accent-purple: #a855f7;
+
+  --text-primary: #e6f7f3;
+  --text-secondary: #7bbfae;
+  --text-muted: #3a7566;
+
+  --border: rgba(16, 185, 129, 0.18);
+  --border-active: rgba(16, 185, 129, 0.5);
+
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 40px rgba(16, 185, 129, 0.15);
+}
+
+[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --bg-glass: rgba(255, 255, 255, 0.9);
+
+  --accent-blue: #2563eb;
+  --accent-blue-light: #3b82f6;
+  --accent-green: #16a34a;
+  --accent-green-light: #22c55e;
+  --accent-amber: #d97706;
+  --accent-amber-light: #f59e0b;
+  --accent-red: #dc2626;
+  --accent-red-light: #ef4444;
+  --accent-purple: #9333ea;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  --border: #e2e8f0;
+  --border-active: #3b82f6;
+
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --shadow-glow: 0 0 30px rgba(37, 99, 235, 0.08);
 }
 
 /* ── Reset & Base ── */
