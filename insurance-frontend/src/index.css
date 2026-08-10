@@ -687,7 +687,7 @@ tbody td {
   justify-content: space-between;
   padding: 1rem 2.5rem;
   border-bottom: 1px solid var(--border);
-  background: rgba(10, 15, 30, 0.8);
+  background: var(--bg-glass);
   backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
