@@ -45,7 +45,9 @@ export const claimApi = {
   getByPolicy:  (policyId) => request('GET',  `/claims/policy/${policyId}`),
   getByStatus:  (status)   => request('GET',  `/claims/status/${status}`),
   getByRisk:    (level)    => request('GET',  `/claims/risk/${level}`),
-  submit:       (data)     => request('POST', '/claims', data),
-  approve:      (id, notes) => request('PUT', `/claims/${id}/approve`, { reviewNotes: notes }),
-  reject:       (id, notes) => request('PUT', `/claims/${id}/reject`,  { reviewNotes: notes }),
+  submit:          (data)      => request('POST', '/claims', data),
+  approve:         (id, notes) => request('PUT', `/claims/${id}/approve`, { reviewNotes: notes }),
+  reject:          (id, notes) => request('PUT', `/claims/${id}/reject`,  { reviewNotes: notes }),
+  recalculateRisk: (id)        => request('POST', `/claims/${id}/recalculate-risk`),
+  recalculateAll:  ()          => request('POST', '/claims/recalculate-all'),
 };

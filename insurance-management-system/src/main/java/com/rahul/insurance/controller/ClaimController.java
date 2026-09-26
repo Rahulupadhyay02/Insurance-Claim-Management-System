@@ -96,4 +96,20 @@ public class ClaimController {
     ) {
         return ResponseEntity.ok(claimService.getClaimsByRiskLevel(level));
     }
+
+    /**
+     * Recalculate risk using Dual-Branch Risk Engine for a specific claim.
+     */
+    @PostMapping("/{id}/recalculate-risk")
+    public ResponseEntity<Claim> recalculateRisk(@PathVariable Long id) {
+        return ResponseEntity.ok(claimService.recalculateRisk(id));
+    }
+
+    /**
+     * Recalculate risk for all legacy claims.
+     */
+    @PostMapping("/recalculate-all")
+    public ResponseEntity<List<Claim>> recalculateAllClaimsRisk() {
+        return ResponseEntity.ok(claimService.recalculateAllClaimsRisk());
+    }
 }

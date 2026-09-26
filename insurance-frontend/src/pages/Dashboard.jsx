@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { customerApi, policyApi, claimApi } from '../api';
-import { formatCurrency, LoadingState, StatusBadge, RiskBadge } from '../components';
+import { formatCurrency, LoadingState, StatusBadge, RiskBadge, ActionBadge } from '../components';
 
 export default function Dashboard({ onNavigate, theme, setTheme }) {
   const [stats, setStats] = useState(null);
@@ -20,8 +20,22 @@ export default function Dashboard({ onNavigate, theme, setTheme }) {
         const approved = claims.filter(c => c.status === 'APPROVED').length;
         const highRisk = claims.filter(c => c.riskLevel === 'HIGH').length;
 
-        setStats({ customers: customers.length, policies: policies.length, claims: claims.length, pending, approved, highRisk });
-        setRecentClaims(claims.slice(-5).reverse());
+        const normalCount = claims.filter(c => (c.recommendedAction === 'NORMAL' || (!c.recommendedAction && c.riskLevel === 'LOW'))).length;
+        const reviewCount = claims.filter(c => (c.recommendedAction === 'REVIEW' || (!c.recommendedAction && c.riskLevel === 'MEDIUM'))).length;
+        const investCount = claims.filter(c => (c.recommendedAction === 'INVESTIGATION' || (!c.recommendedAction && c.riskLevel === 'HIGH'))).length;
+
+        setStats({
+          customers: customers.length,
+          policies: policies.length,
+          claims: claims.length,
+          pending,
+          approved,
+          highRisk,
+          normalCount,
+          reviewCount,
+          investCount,
+        });
+        setRecentClaims(claims.slice(-6).reverse());
       } catch (e) {
         console.error(e);
       } finally {
@@ -37,9 +51,9 @@ export default function Dashboard({ onNavigate, theme, setTheme }) {
     { icon: '👥', label: 'Total Customers', value: stats.customers, color: '#4f8ef7', bg: 'rgba(79,142,247,0.12)', page: 'customers' },
     { icon: '📋', label: 'Active Policies', value: stats.policies, color: '#a855f7', bg: 'rgba(168,85,247,0.12)', page: 'policies' },
     { icon: '📁', label: 'Total Claims', value: stats.claims, color: '#22c55e', bg: 'rgba(34,197,94,0.12)', page: 'claims' },
-    { icon: '⏳', label: 'Pending Review', value: stats.pending, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', page: 'claims' },
-    { icon: '✅', label: 'Approved Claims', value: stats.approved, color: '#22c55e', bg: 'rgba(34,197,94,0.12)', page: 'claims' },
-    { icon: '🚨', label: 'High Risk Claims', value: stats.highRisk, color: '#ef4444', bg: 'rgba(239,68,68,0.12)', page: 'claims' },
+    { icon: '⚡', label: 'STP Normal (Low)', value: stats.normalCount, color: '#22c55e', bg: 'rgba(34,197,94,0.12)', page: 'claims' },
+    { icon: '🔍', label: 'Adjuster Review', value: stats.reviewCount, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', page: 'claims' },
+    { icon: '🚨', label: 'SIU Investigation', value: stats.investCount, color: '#ef4444', bg: 'rgba(239,68,68,0.12)', page: 'claims' },
   ];
 
   const themeOptions = [
@@ -56,7 +70,7 @@ export default function Dashboard({ onNavigate, theme, setTheme }) {
         <div>
           <h1>Dashboard</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            Insurance Claim Management — Live Overview
+            Insurance Claim Management — Live Dual-Branch Risk Engine Overview
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -147,7 +161,7 @@ export default function Dashboard({ onNavigate, theme, setTheme }) {
       {/* ── Recent Claims ── */}
       <div className="table-container">
         <div className="table-header">
-          <span className="table-title">Recent Claims</span>
+          <span className="table-title">Recent Claims & Risk Engine Decisions</span>
           <button className="btn btn-ghost btn-sm" onClick={() => onNavigate('claims')}>View All →</button>
         </div>
         {recentClaims.length === 0 ? (
@@ -158,7 +172,13 @@ export default function Dashboard({ onNavigate, theme, setTheme }) {
           <table>
             <thead>
               <tr>
-                <th>ID</th><th>Description</th><th>Amount</th><th>Status</th><th>AI Risk</th><th>Date</th>
+                <th>ID</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Risk Engine Score</th>
+                <th>Action</th>
+                <th>Date</th>
               </tr>
             </thead>
             <tbody>
@@ -170,7 +190,8 @@ export default function Dashboard({ onNavigate, theme, setTheme }) {
                   </td>
                   <td style={{ fontWeight: 600 }}>{formatCurrency(c.claimAmount)}</td>
                   <td><StatusBadge status={c.status} /></td>
-                  <td><RiskBadge level={c.riskLevel} /></td>
+                  <td><RiskBadge level={c.riskLevel} score={c.riskScore} /></td>
+                  <td><ActionBadge action={c.recommendedAction || (c.riskLevel === 'LOW' ? 'NORMAL' : (c.riskLevel === 'MEDIUM' ? 'REVIEW' : 'INVESTIGATION'))} /></td>
                   <td style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
                     {new Date(c.createdAt).toLocaleDateString('en-IN')}
                   </td>
@@ -181,39 +202,89 @@ export default function Dashboard({ onNavigate, theme, setTheme }) {
         )}
       </div>
 
-      {/* ── Architecture Explainer ── */}
-      <div style={{ marginTop: '2rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+      {/* ── Dual-Branch Architecture Pipeline Explainer ── */}
+      <div style={{ marginTop: '2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.25rem' }}>
         <div className="card">
-          <h3 style={{ marginBottom: '1rem' }}>🏗️ System Architecture</h3>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 2, fontFamily: 'monospace' }}>
-            <div style={{ color: 'var(--accent-blue-light)' }}>React (Vite) — Port 5173</div>
-            <div style={{ paddingLeft: '1rem', color: 'var(--text-muted)' }}>↓ REST API calls</div>
-            <div style={{ color: 'var(--accent-purple)' }}>Spring Boot — Port 8080</div>
-            <div style={{ paddingLeft: '1rem', color: 'var(--text-muted)' }}>↓ JPA / Hibernate</div>
-            <div style={{ color: 'var(--accent-green-light)' }}>MySQL — insurance_db</div>
-            <div style={{ paddingLeft: '1rem', color: 'var(--text-muted)' }}>↓ HTTPS POST Request</div>
-            <div style={{ color: 'var(--accent-amber-light)' }}>Groq Cloud AI (Llama 3.3 70B)</div>
-            <div style={{ paddingLeft: '1rem', color: 'var(--text-muted)' }}>→ Real-Time Risk Output: LOW / MEDIUM / HIGH</div>
+          <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            🧠 Dual-Branch Risk Pipeline
+          </h3>
+          <div style={{
+            fontSize: '0.78rem',
+            color: 'var(--text-secondary)',
+            fontFamily: 'monospace',
+            lineHeight: 1.6,
+            background: 'var(--bg-tertiary)',
+            padding: '1rem',
+            borderRadius: '8px',
+            border: '1px solid var(--border)'
+          }}>
+            <div style={{ color: '#fff', textAlign: 'center', fontWeight: 'bold' }}>CLAIM SUBMISSION</div>
+            <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>↓</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--accent-blue-light)' }}>
+              <span>[Branch 1: Customer History]</span>
+              <span>[Branch 2: Description LLM]</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              <span>• Frequency Analysis</span>
+              <span>• Narrative Consistency</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              <span>• Amount Patterns</span>
+              <span>• Semantic Ambiguity</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              <span>• Time Patterns</span>
+              <span>• Severity Realism</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              <span>• Treatment Patterns</span>
+              <span>• Fraud Cues Extraction</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginTop: '0.4rem' }}>
+              <span style={{ color: '#4f8ef7' }}>➔ Anomaly Score</span>
+              <span style={{ color: '#a855f7' }}>➔ LLM Evidence</span>
+            </div>
+            <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>↘          ↙</div>
+            <div style={{ color: '#f59e0b', textAlign: 'center', fontWeight: 'bold' }}>SYNTHESIZED RISK ENGINE (0-100)</div>
+            <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>↓</div>
+            <div style={{ display: 'flex', justifyContent: 'space-around', fontWeight: 'bold', fontSize: '0.72rem' }}>
+              <span style={{ color: '#22c55e' }}>LOW ➔ Normal</span>
+              <span style={{ color: '#f59e0b' }}>MED ➔ Review</span>
+              <span style={{ color: '#ef4444' }}>HIGH ➔ Investigate</span>
+            </div>
           </div>
         </div>
 
         <div className="card">
-          <h3 style={{ marginBottom: '1rem' }}>🤖 Groq AI Risk Model</h3>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
-            <p style={{ marginBottom: '0.75rem' }}>
-              Every submitted claim is evaluated in real-time by <strong>Groq Llama 3 LLM</strong> across multiple context features:
-            </p>
-            <div style={{ marginBottom: '0.4rem' }}>
-              <span style={{ color: 'var(--accent-blue-light)', fontWeight: 600 }}>• Natural Language NLP:</span> Analyzes suspicious wording & incident detail.
+          <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            🎯 Decisioning Tiers & Actions
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.82rem' }}>
+            <div style={{ padding: '0.65rem 0.85rem', borderRadius: '8px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, color: '#22c55e' }}>
+                <span>🟢 Score 0 – 34: LOW RISK ➔ NORMAL</span>
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '0.2rem' }}>
+                Eligible for Straight-Through Processing (STP). Genuine claim profile, regular historical intervals, realistic incident text.
+              </div>
             </div>
-            <div style={{ marginBottom: '0.4rem' }}>
-              <span style={{ color: 'var(--accent-blue-light)', fontWeight: 600 }}>• Financial Anomaly:</span> Claim vs Policy coverage ratio evaluation.
+
+            <div style={{ padding: '0.65rem 0.85rem', borderRadius: '8px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, color: '#f59e0b' }}>
+                <span>🟡 Score 35 – 69: MEDIUM RISK ➔ REVIEW</span>
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '0.2rem' }}>
+                Routed to Claims Adjuster queue. Moderate coverage ratio or brief description. Requires itemized invoice & provider checks.
+              </div>
             </div>
-            <div style={{ marginBottom: '0.75rem' }}>
-              <span style={{ color: 'var(--accent-blue-light)', fontWeight: 600 }}>• Behavioral Context:</span> Customer's past claim history & frequency.
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <span>Output:</span> <RiskBadge level="LOW" /> <RiskBadge level="MEDIUM" /> <RiskBadge level="HIGH" />
+
+            <div style={{ padding: '0.65rem 0.85rem', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, color: '#ef4444' }}>
+                <span>🔴 Score 70 – 100: HIGH RISK ➔ INVESTIGATION</span>
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '0.2rem' }}>
+                Flagged for Special Investigation Unit (SIU) fraud audit. Elevated claim frequency, early inception window, or suspicious LLM cues.
+              </div>
             </div>
           </div>
         </div>

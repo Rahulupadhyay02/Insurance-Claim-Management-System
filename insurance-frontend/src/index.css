@@ -159,14 +159,16 @@ h4 { font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-sp
 
 .main-content {
   flex: 1;
+  min-width: 0;
   margin-left: 260px;
   min-height: 100vh;
   background: var(--bg-primary);
 }
 
 .page-container {
-  padding: 2rem 2.5rem;
-  max-width: 1280px;
+  padding: 1.75rem 2rem;
+  max-width: 1600px;
+  width: 100%;
 }
 
 .page-header {
@@ -378,7 +380,25 @@ h4 { font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-sp
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  box-shadow: var(--shadow-sm);
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-container::-webkit-scrollbar {
+  height: 7px;
+}
+.table-container::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+.table-container::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+  border-radius: 4px;
+}
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-blue);
 }
 
 .table-header {
@@ -396,18 +416,20 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
+  min-width: 1100px;
 }
 
 thead th {
-  padding: 0.875rem 1.5rem;
+  padding: 0.85rem 1.1rem;
   text-align: left;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: var(--text-muted);
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
+  white-space: nowrap;
 }
 
 tbody tr {
@@ -419,7 +441,7 @@ tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: var(--bg-card-hover); }
 
 tbody td {
-  padding: 1rem 1.5rem;
+  padding: 0.85rem 1.1rem;
   color: var(--text-primary);
   vertical-align: middle;
 }

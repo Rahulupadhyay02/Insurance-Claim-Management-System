@@ -32,10 +32,12 @@ public class ClaimService {
     private final ClaimRepository claimRepository;
     private final PolicyService policyService;
     private final RiskAssessmentService riskAssessmentService;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     /**
      * Submit a new claim.
-     * Automatically runs AI risk assessment and stores the risk level.
+     * Automatically runs the Dual-Branch Risk Engine (Customer History Anomaly Analysis +
+     * LLM Text/Context Analysis) and attaches the comprehensive risk evaluation.
      */
     public Claim submitClaim(ClaimRequest request) {
         Policy policy = policyService.getPolicyById(request.getPolicyId());
@@ -63,13 +65,30 @@ public class ClaimService {
             .policy(policy)
             .build();
 
-        // ── AI Risk Assessment ─────────────────────────────────────────────────
-        Claim.RiskLevel riskLevel = riskAssessmentService.assessRisk(claim, policy);
-        claim.setRiskLevel(riskLevel);
+        // ── Dual-Branch Risk Engine Evaluation ─────────────────────────────────
+        com.rahul.insurance.dto.RiskEngineResult riskResult = riskAssessmentService.evaluateClaim(claim, policy);
+        claim.setRiskLevel(riskResult.getRiskLevel());
+        claim.setRiskScore(riskResult.getFinalRiskScore());
+        claim.setRecommendedAction(riskResult.getRecommendedAction());
+
+        if (riskResult.getAnomalyResult() != null) {
+            claim.setAnomalyScore(riskResult.getAnomalyResult().getCompositeAnomalyScore());
+            try {
+                claim.setAnomalyBreakdown(objectMapper.writeValueAsString(riskResult.getAnomalyResult()));
+            } catch (Exception e) {
+                claim.setAnomalyBreakdown("{}");
+            }
+        }
+
+        if (riskResult.getLlmResult() != null) {
+            claim.setLlmScore(riskResult.getLlmResult().getLlmScore());
+            claim.setLlmEvidence(riskResult.getLlmResult().getEvidenceSummary());
+        }
 
         Claim saved = claimRepository.save(claim);
-        log.info("Submitted claim id={}, policy={}, amount={}, riskLevel={}",
-            saved.getId(), policy.getPolicyNumber(), saved.getClaimAmount(), riskLevel);
+        log.info("Submitted claim id={}, policy={}, amount={}, riskScore={}/100, level={}, action={}",
+            saved.getId(), policy.getPolicyNumber(), saved.getClaimAmount(),
+            saved.getRiskScore(), saved.getRiskLevel(), saved.getRecommendedAction());
         return saved;
     }
 
@@ -147,6 +166,66 @@ public class ClaimService {
     @Transactional(readOnly = true)
     public List<Claim> getClaimsByRiskLevel(Claim.RiskLevel riskLevel) {
         return claimRepository.findByRiskLevel(riskLevel);
+    }
+
+    /**
+     * Recalculate risk using the Dual-Branch Risk Engine for an existing claim.
+     */
+    public Claim recalculateRisk(Long id) {
+        Claim claim = getClaimById(id);
+        Policy policy = claim.getPolicy();
+        com.rahul.insurance.dto.RiskEngineResult riskResult = riskAssessmentService.evaluateClaim(claim, policy);
+
+        claim.setRiskLevel(riskResult.getRiskLevel());
+        claim.setRiskScore(riskResult.getFinalRiskScore());
+        claim.setRecommendedAction(riskResult.getRecommendedAction());
+
+        if (riskResult.getAnomalyResult() != null) {
+            claim.setAnomalyScore(riskResult.getAnomalyResult().getCompositeAnomalyScore());
+            try {
+                claim.setAnomalyBreakdown(objectMapper.writeValueAsString(riskResult.getAnomalyResult()));
+            } catch (Exception e) {
+                claim.setAnomalyBreakdown("{}");
+            }
+        }
+
+        if (riskResult.getLlmResult() != null) {
+            claim.setLlmScore(riskResult.getLlmResult().getLlmScore());
+            claim.setLlmEvidence(riskResult.getLlmResult().getEvidenceSummary());
+        }
+
+        Claim saved = claimRepository.save(claim);
+        log.info("Recalculated risk for claim id={}: score={}, action={}", id, saved.getRiskScore(), saved.getRecommendedAction());
+        return saved;
+    }
+
+    /**
+     * Recalculate risk for all claims that do not yet have a risk score (e.g. legacy submissions).
+     */
+    public List<Claim> recalculateAllClaimsRisk() {
+        List<Claim> all = claimRepository.findAll();
+        for (Claim c : all) {
+            if (c.getRiskScore() == null && c.getPolicy() != null) {
+                try {
+                    com.rahul.insurance.dto.RiskEngineResult riskResult = riskAssessmentService.evaluateClaim(c, c.getPolicy());
+                    c.setRiskLevel(riskResult.getRiskLevel());
+                    c.setRiskScore(riskResult.getFinalRiskScore());
+                    c.setRecommendedAction(riskResult.getRecommendedAction());
+                    if (riskResult.getAnomalyResult() != null) {
+                        c.setAnomalyScore(riskResult.getAnomalyResult().getCompositeAnomalyScore());
+                        c.setAnomalyBreakdown(objectMapper.writeValueAsString(riskResult.getAnomalyResult()));
+                    }
+                    if (riskResult.getLlmResult() != null) {
+                        c.setLlmScore(riskResult.getLlmResult().getLlmScore());
+                        c.setLlmEvidence(riskResult.getLlmResult().getEvidenceSummary());
+                    }
+                    claimRepository.save(c);
+                } catch (Exception e) {
+                    log.warn("Failed to recalculate risk for claim id={}: {}", c.getId(), e.getMessage());
+                }
+            }
+        }
+        return claimRepository.findAll();
     }
 
     // ─── Private helpers ─────────────────────────────────────────────────────────

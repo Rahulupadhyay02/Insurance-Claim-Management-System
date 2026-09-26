@@ -52,7 +52,7 @@ export function StatusBadge({ status }) {
   return <span className={`badge ${cls}`}>{label}</span>;
 }
 
-export function RiskBadge({ level }) {
+export function RiskBadge({ level, score }) {
   if (!level) return <span className="badge badge-gray">N/A</span>;
   const map = {
     LOW:    { cls: 'badge-green', icon: '🟢' },
@@ -60,7 +60,31 @@ export function RiskBadge({ level }) {
     HIGH:   { cls: 'badge-red',   icon: '🔴' },
   };
   const { cls, icon } = map[level] || { cls: 'badge-gray', icon: '⚪' };
-  return <span className={`badge ${cls}`}>{icon} {level}</span>;
+  return (
+    <span className={`badge ${cls}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+      <span>{icon}</span>
+      <span>{level}</span>
+      {score !== undefined && score !== null && (
+        <span style={{ opacity: 0.85, fontSize: '0.75rem', fontWeight: 700 }}>({score})</span>
+      )}
+    </span>
+  );
+}
+
+export function ActionBadge({ action }) {
+  if (!action) return null;
+  const map = {
+    NORMAL:        { cls: 'badge-green', label: 'Normal (STP)', icon: '⚡' },
+    REVIEW:        { cls: 'badge-amber', label: 'Review', icon: '🔍' },
+    INVESTIGATION: { cls: 'badge-red',   label: 'Investigation', icon: '🚨' },
+  };
+  const { cls, label, icon } = map[action.toUpperCase()] || { cls: 'badge-gray', label: action, icon: '📋' };
+  return (
+    <span className={`badge ${cls}`} style={{ fontSize: '0.72rem', letterSpacing: '0.02em', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+      <span>{icon}</span>
+      <span>{label}</span>
+    </span>
+  );
 }
 
 // ── Loading spinner ───────────────────────────────────────────────────────────

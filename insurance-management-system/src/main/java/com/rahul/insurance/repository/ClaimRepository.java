@@ -12,6 +12,11 @@ import java.util.List;
 @Repository
 public interface ClaimRepository extends JpaRepository<Claim, Long> {
 
+    // Find all claims with policy eagerly fetched
+    @org.springframework.lang.NonNull
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"policy"})
+    List<Claim> findAll();
+
     // Find all claims for a specific policy
     List<Claim> findByPolicyId(Long policyId);
 
